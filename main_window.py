@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QDesktopWidget, QSizePolicy, QPushButton, QSpacerItem, QGraphicsDropShadowEffect
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QIcon
 from PyQt5.QtCore import Qt, QTimer
 from components.video_capture import VideoCapture
 from components.menu_component import MenuComponent
@@ -23,6 +23,7 @@ class MainWindow(QMainWindow):
         self.prediction_handler = prediction_handler
         self.transform = transform
         self.setWindowTitle("Polish Sign Language Translator")
+        self.setWindowIcon(QIcon('assets/logo.png'))
         self.setGeometry(100, 100, 1200, 800)
         self.center_window()
 
@@ -44,12 +45,20 @@ class MainWindow(QMainWindow):
         self.video_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setGraphicsEffect(shadow_effect())
-
+        
         self.start_stop_button = QPushButton("START", self)
         self.start_stop_button.clicked.connect(self.toggle_start_stop)
         self.start_stop_button.setFont(self.custom_font)
-        
         self.start_stop_button.setGraphicsEffect(shadow_effect())
+        self.start_stop_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.start_stop_button.setMaximumWidth(150)
+        self.start_stop_button.setProperty("status", "stopped")
+
+        # self.start_stop_button = QPushButton("START", self)
+        # self.start_stop_button.clicked.connect(self.toggle_start_stop)
+        # self.start_stop_button.setFont(self.custom_font)
+        
+        # self.start_stop_button.setGraphicsEffect(shadow_effect())
 
         self.sentence_label = QLabel(self)
         self.sentence_label.setAlignment(Qt.AlignCenter)
@@ -116,17 +125,32 @@ class MainWindow(QMainWindow):
         """Resetuje rozpoznany tekst do pustego ciągu po 2 sekundach braku nowych gestów."""
         self.video_capture.set_recognized_text("")
 
+    # def toggle_start_stop(self):
+    #     self.is_running = not self.is_running
+    #     self.start_stop_button.setText("STOP" if self.is_running else "START")
+    #     self.video_capture.set_show_text(True if self.is_running else False)
+        
+    #     if self.is_running:
+    #         self.recognized_gestures.clear()
+    #         self.sentence_label.setText("")
+    #         self.reset_text_timer.start()
+    #     else:
+    #         self.sentence_label.setText(format_sentence(self.recognized_gestures))
+    
     def toggle_start_stop(self):
         self.is_running = not self.is_running
+        
         self.start_stop_button.setText("STOP" if self.is_running else "START")
+        self.start_stop_button.setProperty("status", "running" if self.is_running else "stopped")
+        self.start_stop_button.style().unpolish(self.start_stop_button)
+        self.start_stop_button.style().polish(self.start_stop_button)
+        
         self.video_capture.set_show_text(True if self.is_running else False)
         
         if self.is_running:
             self.recognized_gestures.clear()
             self.sentence_label.setText("")
             self.reset_text_timer.start()
-        else:
-            self.sentence_label.setText(format_sentence(self.recognized_gestures))
 
     def closeEvent(self, event):
         self.video_capture.release()

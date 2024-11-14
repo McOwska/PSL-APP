@@ -54,6 +54,12 @@ class MenuComponent(QWidget):
         self.last_selected_item = None
         
         self.main_menu.itemClicked.connect(self.handle_item_click)
+        
+        self.main_menu.setStyleSheet("""
+            background-image: url('assets/logo_2.png');
+            background-repeat: no-repeat;
+            background-position: bottom left;
+        """)
 
     def add_menu_option(self, text, callback):
         item = QListWidgetItem(text)
@@ -80,3 +86,4 @@ class MenuComponent(QWidget):
 
     def on_about_project_click(self):
         pass
+        

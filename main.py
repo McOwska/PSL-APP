@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import QFileSystemWatcher
+from PyQt5.QtGui import QIcon
 from main_window import MainWindow
 from models.model_LSTM_transformer import LSTMTransformerModel
 from models.model_LSTM import LSTMModel

@@ -60,40 +60,8 @@ class SidePanel(QWidget):
         self.title.setObjectName("title")
         self.content.setObjectName("content")
         
-        self.setStyleSheet("""
-            #side_panel {
-                background-color: #132234;
-                color: white;
-                margin: 0;
-            }
-            
-            #scroll_area {
-                background-color: transparent;
-                border: none;
-                margin: 0;
-            }
-            
-            #scroll_content {
-                background-color: #132234;
-                color: white;
-                margin: 0;
-            }
-            
-            #title {
-                font-size: 24px;
-                font-weight: bold;
-                color: white;
-                padding: 25px;
-                padding-top: 40px;
-            }
-        
-            #content {
-                font-size: 16px;
-                color: white;
-                line-height: 1.5;
-                padding: 25px;
-            }
-        """)
+        with open('assets/styles_side_panels.qss', 'r') as file:
+            self.setStyleSheet(file.read())
 
     def set_content(self, content):
         self.title.setText(content)
