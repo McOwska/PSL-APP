@@ -1,0 +1,8 @@
+rtmpose/end2end.onnx
+__pycache__/
+rtmpose/__pycache__/
+assets/__pycache__/
+components/__pycache__/ 
+helpers/__pycache__/
+side_panels_content/__pycache__/
+*__pycache__/
