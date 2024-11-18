@@ -56,7 +56,7 @@ class MenuComponent(QWidget):
         self.main_menu.itemClicked.connect(self.handle_item_click)
         
         self.main_menu.setStyleSheet("""
-            background-image: url('assets/logo_2.png');
+            background-image: url('assets/logo_wygladzone_cienie.png');
             background-repeat: no-repeat;
             background-position: bottom left;
         """)

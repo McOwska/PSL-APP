@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.transform = transform
         self.setWindowTitle("Polish Sign Language Translator")
         self.setWindowIcon(QIcon('assets/logo.png'))
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, 1500, 1000)
         self.center_window()
 
         self.init_ui()
@@ -122,7 +122,6 @@ class MainWindow(QMainWindow):
         self.video_label.setPixmap(QPixmap.fromImage(q_image))
 
     def reset_recognized_text(self):
-        """Resetuje rozpoznany tekst do pustego ciągu po 2 sekundach braku nowych gestów."""
         self.video_capture.set_recognized_text("")
 
     # def toggle_start_stop(self):
@@ -157,7 +156,6 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
         
     def show_side_panel(self, content):
-        """Pokazuje lub przełącza side panel z nową treścią."""
         if content == "":
             self.side_panel.hide_panel()
             return
