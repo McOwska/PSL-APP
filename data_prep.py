@@ -20,8 +20,9 @@ def extract_frames(video_path, output_folder):
         
         # Zapisz klatkę jako obraz
         frame_filename = os.path.join(output_folder, f"frame_{frame_count:05d}.jpg")
-        if (frame_count % 7 == 0):
-            cv2.imwrite(frame_filename, frame)
+        if (frame_count % 3 == 0):
+            flipped_frame = cv2.flip(frame, 1)  # Mirror flip the frame
+            cv2.imwrite(frame_filename, flipped_frame)
         frame_count += 1
 
         print(f"Zapisano klatkę: {frame_filename}")

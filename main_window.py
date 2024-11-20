@@ -31,7 +31,7 @@ class MainWindow(QMainWindow):
 
         video_source = 'eval_data/do_widzenia_1/frames/'
 
-        self.video_capture = VideoCapture(source=video_source)
+        self.video_capture = VideoCapture(folder_path=video_source, loop=True)
         self.video_capture.frame_captured.connect(self.update_video_label)
 
         self.is_running = False

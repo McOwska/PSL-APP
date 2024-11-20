@@ -2,24 +2,43 @@
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 import cv2
 import numpy as np
+import os
+import glob
 
 class VideoCapture(QObject):
     frame_captured = pyqtSignal(np.ndarray)
 
-    def __init__(self, source=0):
+    def __init__(self, folder_path, loop=True):
         super().__init__()
-        self.cap = cv2.VideoCapture(source)
+        self.folder_path = folder_path
+        self.image_paths = sorted(glob.glob(os.path.join(folder_path, '*.*')))  # Możesz filtrować po rozszerzeniu, np. '*.jpg'
+        self.loop = loop
+        self.current_index = 0
+        self.total_images = len(self.image_paths)
+        if self.total_images == 0:
+            raise ValueError("Folder nie zawiera obrazów.")
+        
         self.timer = QTimer()
         self.timer.timeout.connect(self.capture_frame)
-        self.timer.start(30)  # Możesz dostosować interwał
+        self.timer.start(33)  # Dostosuj interwał (ms) w zależności od potrzeb
 
         self.recognized_text = ""
         self.show_text = False
 
     def capture_frame(self):
-        ret, frame = self.cap.read()
-        if ret:
-            self.frame_captured.emit(frame)
+        if self.current_index < self.total_images:
+            image_path = self.image_paths[self.current_index]
+            frame = cv2.imread(image_path)
+            if frame is not None:
+                self.frame_captured.emit(frame)
+            else:
+                print(f"Nie można wczytać obrazu: {image_path}")
+            self.current_index += 1
+        else:
+            if self.loop:
+                self.current_index = 0
+            else:
+                self.timer.stop()
 
     def set_recognized_text(self, text):
         self.recognized_text = text
@@ -28,4 +47,4 @@ class VideoCapture(QObject):
         self.show_text = show
 
     def release(self):
-        self.cap.release()
+        self.timer.stop()
