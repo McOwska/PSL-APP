@@ -29,7 +29,9 @@ class MainWindow(QMainWindow):
 
         self.init_ui()
 
-        self.video_capture = VideoCapture()
+        video_source = 'eval_data/do_widzenia_1/frames/'
+
+        self.video_capture = VideoCapture(source=video_source)
         self.video_capture.frame_captured.connect(self.update_video_label)
 
         self.is_running = False
@@ -112,7 +114,7 @@ class MainWindow(QMainWindow):
                 font_scale = 1
                 position = (mirrored_frame.shape[1] - 10 - cv2.getTextSize(self.video_capture.recognized_text, font, font_scale, thickness)[0][0], 30)
                 font_scale = 1
-                color = (255, 255, 255)
+                color = (255, 0, 0)
                 cv2.putText(mirrored_frame, self.video_capture.recognized_text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
         mirrored_frame_rgb = cv2.cvtColor(mirrored_frame, cv2.COLOR_BGR2RGB)

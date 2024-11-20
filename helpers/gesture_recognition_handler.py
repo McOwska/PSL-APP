@@ -22,6 +22,7 @@ class GestureRecognitionHandler:
         self.action_display_duration = 1
 
     def process_frame(self, frame, transform):
+        
         x = transform([frame])
         x = torch.tensor(x[0], dtype=torch.float32)
         x = x.view(1, 133, 2)
