@@ -2,36 +2,40 @@ import cv2
 import os
 
 def extract_frames(video_path, output_folder):
-    # Upewnij się, że folder wyjściowy istnieje
+    # Ensure the output folder exists
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
-    # Otwórz plik wideo
+    # Open the video file
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print(f"Nie można otworzyć pliku wideo: {video_path}")
+        print(f"Cannot open video file: {video_path}")
         return
 
     frame_count = 0
     while True:
         ret, frame = cap.read()
         if not ret:
-            break  # Koniec wideo
+            break  # End of video
         
-        # Zapisz klatkę jako obraz
+        # Crop the bottom 200 pixels
+        height, width, _ = frame.shape
+        cropped_frame = frame[:height-200, :]
+
+        # Save the frame as an image
         frame_filename = os.path.join(output_folder, f"frame_{frame_count:05d}.jpg")
-        if (frame_count % 3 == 0):
-            flipped_frame = cv2.flip(frame, 1)  # Mirror flip the frame
-            cv2.imwrite(frame_filename, flipped_frame)
+        if (frame_count % 2 == 0):
+            flipped_frame = cv2.flip(cropped_frame, 1)  # Mirror flip the frame
+            cv2.imwrite(frame_filename, cropped_frame)
         frame_count += 1
 
-        print(f"Zapisano klatkę: {frame_filename}")
+        print(f"Saved frame: {frame_filename}")
     
-    # Zamknij plik wideo
+    # Close the video file
     cap.release()
-    print(f"Zakończono zapis klatek. Łącznie zapisano: {frame_count} klatek.")
+    print(f"Finished saving frames. Total frames saved: {frame_count}.")
 
-# Przykład użycia
-video_path = "eval_data/do_widzenia_1.mp4"  # Ścieżka do pliku wideo
-output_folder = "eval_data/do_widzenia_1/frames"  # Folder na klatki
+# Example usage
+video_path = "eval_data/migamy_pjmem/ig_6.mp4"  # Path to the video file
+output_folder = "eval_data/migamy_pjmem/ig_6/frames"  # Folder for frames
 extract_frames(video_path, output_folder)
