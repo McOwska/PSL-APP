@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
 
         self.init_ui()
 
-        video_source = 'eval_data/do_widzenia_1/frames/'
+        video_source = 'eval_data/marta/frames'
 
         self.video_capture = VideoCapture(folder_path=video_source, loop=True)
         self.video_capture.frame_captured.connect(self.update_video_label)
@@ -177,3 +177,20 @@ class MainWindow(QMainWindow):
             self.side_panel.set_content(content)
             self.side_panel.show_panel()
             self.is_switching_panel_content = False
+            def pause_video(self):
+                if self.is_running:
+                    self.video_capture.pause()
+                    self.is_running = False
+                    self.start_stop_button.setText("START")
+                    self.start_stop_button.setProperty("status", "stopped")
+                    self.start_stop_button.style().unpolish(self.start_stop_button)
+                    self.start_stop_button.style().polish(self.start_stop_button)
+
+            def start_video(self):
+                if not self.is_running:
+                    self.video_capture.start()
+                    self.is_running = True
+                    self.start_stop_button.setText("STOP")
+                    self.start_stop_button.setProperty("status", "running")
+                    self.start_stop_button.style().unpolish(self.start_stop_button)
+                    self.start_stop_button.style().polish(self.start_stop_button)
