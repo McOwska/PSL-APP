@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QDesktopWidget, QSizePolicy, QPushButton, QSpacerItem, QGraphicsDropShadowEffect
+from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QDesktopWidget, QSizePolicy, QPushButton, QSpacerItem
 from PyQt5.QtGui import QImage, QPixmap, QIcon
 from PyQt5.QtCore import Qt, QTimer
 from components.video_capture import VideoCapture
@@ -27,14 +27,14 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1500, 1000)
         self.center_window()
 
+        self.is_running = False    # Czy proces predykcji jest aktywny
+        self.is_paused = False     # Czy wideo jest spauzowane
+
         self.init_ui()
 
-        video_source = 'eval_data/marta/frames'
-
+        video_source = 'eval_data/migam_org/frames/2'
         self.video_capture = VideoCapture(folder_path=video_source, loop=True)
         self.video_capture.frame_captured.connect(self.update_video_label)
-
-        self.is_running = False
 
         self.reset_text_timer = QTimer()
         self.reset_text_timer.setInterval(2000)
@@ -56,11 +56,13 @@ class MainWindow(QMainWindow):
         self.start_stop_button.setMaximumWidth(150)
         self.start_stop_button.setProperty("status", "stopped")
 
-        # self.start_stop_button = QPushButton("START", self)
-        # self.start_stop_button.clicked.connect(self.toggle_start_stop)
-        # self.start_stop_button.setFont(self.custom_font)
-        
-        # self.start_stop_button.setGraphicsEffect(shadow_effect())
+        # Drugi przycisk: PAUSE/RESUME
+        self.pause_resume_button = QPushButton("PAUSE", self)
+        self.pause_resume_button.clicked.connect(self.toggle_pause_resume)
+        self.pause_resume_button.setFont(self.custom_font)
+        self.pause_resume_button.setGraphicsEffect(shadow_effect())
+        self.pause_resume_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.pause_resume_button.setMaximumWidth(150)
 
         self.sentence_label = QLabel(self)
         self.sentence_label.setAlignment(Qt.AlignCenter)
@@ -73,7 +75,13 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
         right_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         right_layout.addWidget(self.video_label, alignment=Qt.AlignCenter)
-        right_layout.addWidget(self.start_stop_button, alignment=Qt.AlignCenter)
+
+        # Dodanie przycisków START/STOP i PAUSE/RESUME w poziomym układzie
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(self.start_stop_button, alignment=Qt.AlignCenter)
+        buttons_layout.addWidget(self.pause_resume_button, alignment=Qt.AlignCenter)
+
+        right_layout.addLayout(buttons_layout)
         right_layout.addWidget(self.sentence_label, alignment=Qt.AlignCenter)
         right_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
@@ -98,14 +106,16 @@ class MainWindow(QMainWindow):
         self.move(window_geometry.topLeft())
 
     def update_video_label(self, frame):
+        # Jeśli pauza jest aktywna, to nie aktualizujemy klatki (zatrzymujemy się na ostatniej)
+        if self.is_paused:
+            return
+
         mirrored_frame = cv2.flip(frame, 1)
         if self.is_running:
-            recognized_action, confidence = self.prediction_handler.process_frame(frame, self.transform)
-            
+            recognized_action, confidence = self.prediction_handler.process_frame(mirrored_frame, self.transform)
             if recognized_action is not None:
                 self.recognized_gestures.append(f"{recognized_action}")
                 self.video_capture.set_recognized_text(recognized_action)
-                
                 self.reset_text_timer.start()
 
             if self.video_capture.recognized_text:
@@ -113,7 +123,6 @@ class MainWindow(QMainWindow):
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 font_scale = 1
                 position = (mirrored_frame.shape[1] - 10 - cv2.getTextSize(self.video_capture.recognized_text, font, font_scale, thickness)[0][0], 30)
-                font_scale = 1
                 color = (255, 0, 0)
                 cv2.putText(mirrored_frame, self.video_capture.recognized_text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
@@ -126,18 +135,6 @@ class MainWindow(QMainWindow):
     def reset_recognized_text(self):
         self.video_capture.set_recognized_text("")
 
-    # def toggle_start_stop(self):
-    #     self.is_running = not self.is_running
-    #     self.start_stop_button.setText("STOP" if self.is_running else "START")
-    #     self.video_capture.set_show_text(True if self.is_running else False)
-        
-    #     if self.is_running:
-    #         self.recognized_gestures.clear()
-    #         self.sentence_label.setText("")
-    #         self.reset_text_timer.start()
-    #     else:
-    #         self.sentence_label.setText(format_sentence(self.recognized_gestures))
-    
     def toggle_start_stop(self):
         self.is_running = not self.is_running
         
@@ -146,12 +143,26 @@ class MainWindow(QMainWindow):
         self.start_stop_button.style().unpolish(self.start_stop_button)
         self.start_stop_button.style().polish(self.start_stop_button)
         
-        self.video_capture.set_show_text(True if self.is_running else False)
+        self.video_capture.set_show_text(self.is_running)
         
         if self.is_running:
             self.recognized_gestures.clear()
             self.sentence_label.setText("")
             self.reset_text_timer.start()
+        else:
+            # Zatrzymanie predykcji nie kasuje jednak bieżącej klatki
+            # Zatrzymuje tylko proces rozpoznawania
+            self.sentence_label.setText(format_sentence(self.recognized_gestures))
+
+    def toggle_pause_resume(self):
+        # Przełączenie stanu pauzy wideo
+        self.is_paused = not self.is_paused
+        if self.is_paused:
+            self.pause_resume_button.setText("RESUME")
+            self.video_capture.pause()  # Wstrzymanie wideo
+        else:
+            self.pause_resume_button.setText("PAUSE")
+            self.video_capture.start()  # Wznowienie wideo
 
     def closeEvent(self, event):
         self.video_capture.release()
@@ -177,20 +188,3 @@ class MainWindow(QMainWindow):
             self.side_panel.set_content(content)
             self.side_panel.show_panel()
             self.is_switching_panel_content = False
-            def pause_video(self):
-                if self.is_running:
-                    self.video_capture.pause()
-                    self.is_running = False
-                    self.start_stop_button.setText("START")
-                    self.start_stop_button.setProperty("status", "stopped")
-                    self.start_stop_button.style().unpolish(self.start_stop_button)
-                    self.start_stop_button.style().polish(self.start_stop_button)
-
-            def start_video(self):
-                if not self.is_running:
-                    self.video_capture.start()
-                    self.is_running = True
-                    self.start_stop_button.setText("STOP")
-                    self.start_stop_button.setProperty("status", "running")
-                    self.start_stop_button.style().unpolish(self.start_stop_button)
-                    self.start_stop_button.style().polish(self.start_stop_button)

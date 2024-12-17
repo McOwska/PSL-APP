@@ -20,7 +20,8 @@ class VideoCapture(QObject):
         
         self.timer = QTimer()
         self.timer.timeout.connect(self.capture_frame)
-        self.timer.start(33)  # Dostosuj interwał (ms) w zależności od potrzeb
+        self.interval = 33  # Domyślny interwał pomiędzy klatkami (ms)
+        self.timer.start(self.interval)
 
         self.recognized_text = ""
         self.show_text = False
@@ -29,8 +30,9 @@ class VideoCapture(QObject):
         if self.current_index < self.total_images:
             image_path = self.image_paths[self.current_index]
             frame = cv2.imread(image_path)
+            flipped_frame = cv2.flip(frame, 1)  # Lustrzane odbicie klatki
             if frame is not None:
-                self.frame_captured.emit(frame)
+                self.frame_captured.emit(flipped_frame)
             else:
                 print(f"Nie można wczytać obrazu: {image_path}")
             self.current_index += 1
@@ -48,3 +50,12 @@ class VideoCapture(QObject):
 
     def release(self):
         self.timer.stop()
+
+    def pause(self):
+        """Zatrzymuje wyświetlanie kolejnych klatek, pauzując timer."""
+        self.timer.stop()
+
+    def start(self):
+        """Wznawia wyświetlanie klatek od obecnego indeksu, uruchamiając ponownie timer."""
+        if not self.timer.isActive():
+            self.timer.start(self.interval)

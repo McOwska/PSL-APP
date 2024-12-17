@@ -4,7 +4,7 @@ from collections import deque
 
 
 class GestureRecognitionHandler:
-    def __init__(self, model, label_map, confidence_threshold=0.8, consecutive_frames=5, max_sequence_length=30):
+    def __init__(self, model, label_map, confidence_threshold=0.8, consecutive_frames=1, max_sequence_length=20):
         self.model = model
         self.actions = {value: key for key, value in label_map.items()}
         self.confidence_threshold = confidence_threshold
@@ -22,6 +22,8 @@ class GestureRecognitionHandler:
         self.last_action = ""
         self.last_action_time = time.time()
         self.action_display_duration = 1
+
+        self.flag = True
 
     def process_frame(self, frame, transform):
         """
@@ -67,6 +69,7 @@ class GestureRecognitionHandler:
                 outputs, _ = self.model(sequence)
                 outputs = torch.nn.functional.softmax(outputs[0], dim=0)  # Softmax na wynikach
                 confidence, predicted_index = torch.max(outputs, dim=0)
+                
                 predicted_action = self.actions[predicted_index.item()]
 
                 print('Predicted action:', predicted_action, 'with confidence:', confidence.item())
