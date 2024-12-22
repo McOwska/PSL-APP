@@ -22,8 +22,10 @@ class MainWindow(QMainWindow):
         if families:
             custom_font_family = families[0]
             self.custom_font = QFont(custom_font_family)
+            self.custom_font.setPointSize(24)
         else:
             self.custom_font = QFont()
+            self.custom_font.setPointSize(24)
         
         self.prediction_handler = prediction_handler
         self.transform = transform
@@ -77,7 +79,7 @@ class MainWindow(QMainWindow):
         self.sentence_label.setAlignment(Qt.AlignCenter)
         self.sentence_label.setFont(self.custom_font)
         self.sentence_label.setWordWrap(True)
-        self.sentence_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
+        self.sentence_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)  # Zmieniono tutaj
 
 
         self.menu_list = MenuComponent(self)
@@ -140,7 +142,7 @@ class MainWindow(QMainWindow):
             if recognized_action is not None:
                 # Update the prediction buffer with (gesture, confidence)
                 self.prediction_buffer.append((recognized_action, confidence))
-                if len(self.prediction_buffer) > 5:
+                if len(self.prediction_buffer) > 6:
                     self.prediction_buffer.pop(0)  # Keep only the last 5 predictions
 
                 # Check if any gesture appears at least 4 times in the last 5 predictions
@@ -155,7 +157,7 @@ class MainWindow(QMainWindow):
                     if count >= 4:
                         # Calculate average confidence for this gesture
                         avg_confidence = sum(gesture_confidences[gesture]) / len(gesture_confidences[gesture])
-                        if avg_confidence >= 0.8:
+                        if avg_confidence >= 0.7:
                             consensus_gesture = gesture
                             break
 
@@ -224,6 +226,7 @@ class MainWindow(QMainWindow):
             # It only stops the recognition process
             self.sentence_label.setText(format_sentence(self.recognized_gestures))
             self.sentence_label.adjustSize()
+            self.sentence_label.setFixedWidth(self.video_label.width())
 
     def toggle_pause_resume(self):
         # Toggle the pause state of the video

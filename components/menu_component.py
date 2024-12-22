@@ -35,7 +35,7 @@ class MenuComponent(QWidget):
         self.main_menu.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.main_menu.setFont(custom_font)
         
-        self.add_menu_option("User instruction", self.on_user_instruction_click)
+        self.add_menu_option("User instructions", self.on_user_instruction_click)
         self.add_menu_option("Currently available gestures", self.on_gestures_click)
         self.add_menu_option("About the project", self.on_about_project_click)
         

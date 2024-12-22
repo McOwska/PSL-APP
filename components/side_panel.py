@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QScrollArea
 from PyQt5.QtCore import Qt, QRect, QPropertyAnimation
 from PyQt5.QtWidgets import QSizePolicy
 from PyQt5.QtGui import QFont, QFontDatabase
+import markdown
 
 class SidePanel(QWidget):
     def __init__(self, parent=None):
@@ -66,19 +67,41 @@ class SidePanel(QWidget):
     def set_content(self, content):
         self.title.setText(content)
         match content:
-            case "User instruction":
-                with open('side_panels_content/user_instruction.txt', 'r') as file:
-                    self.content.setText(self.wrap_text(file.read()))
+            case "User instructions":
+                with open('side_panels_content/user_instructions.md', 'r', encoding='utf-8') as file:
+                    markdown_text = file.read()
+                    html = self.convert_markdown_to_html(markdown_text)
+                    self.content.setText(self.wrap_html(html))
             case "Currently available gestures":
-                with open('side_panels_content/gestures_list.txt', 'r') as file:
+                with open('side_panels_content/gestures_list.txt', 'r', encoding='utf-8') as file:
                     raw_text = file.read()
-                    # Formatujemy go do dwóch kolumn
+                    # Format into two columns
                     two_column_html = self.wrap_text_in_two_columns(raw_text)
-                    # Ustawiamy w QLabel
                     self.content.setText(two_column_html)
             case "About the project":
-                with open('side_panels_content/project_description.txt', 'r') as file:
-                    self.content.setText(self.wrap_text(file.read()))
+                with open('side_panels_content/about_the_project.md', 'r', encoding='utf-8') as file:
+                    markdown_text = file.read()
+                    html = self.convert_markdown_to_html(markdown_text)
+                    self.content.setText(self.wrap_html(html))
+
+    def convert_markdown_to_html(self, markdown_text):
+        """
+        Converts Markdown text to HTML using the markdown library.
+        """
+        html = markdown.markdown(markdown_text)
+        return html
+
+    def wrap_html(self, html_content):
+        """
+        Wraps the HTML content with additional styling if necessary.
+        """
+        # You can add CSS styles here if needed
+        styled_html = f"""
+        <div style="text-align: justify; font-size: 14px;">
+            {html_content}
+        </div>
+        """
+        return styled_html
 
     def wrap_text(self, text):
         return f'<div style="text-align: justify;">{text}</div>'
@@ -87,23 +110,23 @@ class SidePanel(QWidget):
         """
         Converts the text lines into a two-column HTML list with smaller bullet points.
         """
-        # Rozdzielamy tekst na linie
+        # Split the text into lines
         lines = text.strip().split("\n")
         
-        # Usuwamy zbędne znaki (np. '-' na początku) i tworzymy listę gestów
+        # Clean lines by removing unnecessary characters (e.g., '-' at the beginning)
         clean_lines = [line.lstrip("-").strip() for line in lines if line.strip()]
         
-        # Podziel listę na dwie części
+        # Split the list into two halves
         mid = (len(clean_lines) + 1) // 2
         left = clean_lines[:mid]
         right = clean_lines[mid:]
         
-        # Funkcja do tworzenia listy HTML z mniejszymi punktorami
+        # Function to create an HTML list with smaller bullet points
         def create_custom_list(items):
             list_html = "<ul style='list-style: none; padding-left: 0;'>"
             for item in items:
                 list_html += f"""
-                <li style="position: relative; padding-left: 10px;">
+                <li style="position: relative; padding-left: 10px; margin-bottom: 5px;">
                     <span style="
                         position: absolute;
                         left: 0;
@@ -121,11 +144,11 @@ class SidePanel(QWidget):
             list_html += "</ul>"
             return list_html
         
-        # Tworzymy listy dla obu kolumn
+        # Create lists for both columns
         html_left = create_custom_list(left)
         html_right = create_custom_list(right)
         
-        # Tworzymy tabelę HTML z dwiema kolumnami
+        # Create an HTML table with two columns
         html = f"""
         <table width="100%">
             <tr>
@@ -139,7 +162,6 @@ class SidePanel(QWidget):
         </table>
         """
         return html
-
 
     def resizeEvent(self, event):
         self.setFixedHeight(self.parent().height())
