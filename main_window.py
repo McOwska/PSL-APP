@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         self.init_ui()
 
         video_source = 'eval_data/migam_org/frames/2'
-        self.video_capture = VideoCapture(folder_path=video_source, loop=True)
+        self.video_capture = VideoCapture(loop=True)
         self.video_capture.frame_captured.connect(self.update_video_label)
 
         self.reset_text_timer = QTimer()
