@@ -1,6 +1,7 @@
 import torch
 import time
 from collections import deque
+import cv2
 
 
 class GestureRecognitionHandler:
@@ -38,15 +39,16 @@ class GestureRecognitionHandler:
         """
         # Dodajemy klatkę do bufora
         x = transform([frame])  # Przekształcenie klatki
+        landmarks = x
         x = torch.tensor(x[0], dtype=torch.float32).view(-1)  # Spłaszczenie do [266]
         self.buffer.append(x)  # Dodanie klatki do bufora
 
         # Sprawdzenie widoczności dłoni
         hands_visible = (
-            (frame[self.hand_left_indices, 0] != 0).any() or
-            (frame[self.hand_left_indices, 1] != 0).any() or
-            (frame[self.hand_right_indices, 0] != 0).any() or
-            (frame[self.hand_right_indices, 1] != 0).any()
+            (landmarks[0][self.hand_left_indices, 0] != 0).any() or
+            (landmarks[0][self.hand_left_indices, 1] != 0).any() or
+            (landmarks[0][self.hand_right_indices, 0] != 0).any() or
+            (landmarks[0][self.hand_right_indices, 1] != 0).any()
         )
         self.hands_visible_window.append(hands_visible)
 
@@ -56,6 +58,7 @@ class GestureRecognitionHandler:
 
         # Reset bufora, jeśli brak widoczności dłoni przez 5 klatek
         if len(self.hands_visible_window) == 5 and not any(self.hands_visible_window):
+            print('Resetting buffer due to hands not visible')
             self.reset_buffer()
             return None, None
 
