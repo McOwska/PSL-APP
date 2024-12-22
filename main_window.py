@@ -56,13 +56,13 @@ class MainWindow(QMainWindow):
         self.start_stop_button.setMaximumWidth(150)
         self.start_stop_button.setProperty("status", "stopped")
 
-        # Drugi przycisk: PAUSE/RESUME
-        self.pause_resume_button = QPushButton("PAUSE", self)
-        self.pause_resume_button.clicked.connect(self.toggle_pause_resume)
-        self.pause_resume_button.setFont(self.custom_font)
-        self.pause_resume_button.setGraphicsEffect(shadow_effect())
-        self.pause_resume_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.pause_resume_button.setMaximumWidth(150)
+        # # Drugi przycisk: PAUSE/RESUME
+        # self.pause_resume_button = QPushButton("PAUSE", self)
+        # self.pause_resume_button.clicked.connect(self.toggle_pause_resume)
+        # self.pause_resume_button.setFont(self.custom_font)
+        # self.pause_resume_button.setGraphicsEffect(shadow_effect())
+        # self.pause_resume_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        # self.pause_resume_button.setMaximumWidth(150)
 
         self.sentence_label = QLabel(self)
         self.sentence_label.setAlignment(Qt.AlignCenter)
@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
         # Dodanie przycisków START/STOP i PAUSE/RESUME w poziomym układzie
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(self.start_stop_button, alignment=Qt.AlignCenter)
-        buttons_layout.addWidget(self.pause_resume_button, alignment=Qt.AlignCenter)
+        # buttons_layout.addWidget(self.pause_resume_button, alignment=Qt.AlignCenter)
 
         right_layout.addLayout(buttons_layout)
         right_layout.addWidget(self.sentence_label, alignment=Qt.AlignCenter)
@@ -122,11 +122,11 @@ class MainWindow(QMainWindow):
                 thickness = 2
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 font_scale = 1
-                position = (mirrored_frame.shape[1] - 10 - cv2.getTextSize(self.video_capture.recognized_text, font, font_scale, thickness)[0][0], 30)
-                color = (255, 0, 0)
-                cv2.putText(mirrored_frame, self.video_capture.recognized_text, position, font, font_scale, color, thickness, cv2.LINE_AA)
+                position = (30, 50)
+                color = (255, 255, 255)
+                cv2.putText(frame, self.video_capture.recognized_text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
-        mirrored_frame_rgb = cv2.cvtColor(mirrored_frame, cv2.COLOR_BGR2RGB)
+        mirrored_frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         height, width, channel = mirrored_frame_rgb.shape
         bytes_per_line = 3 * width
         q_image = QImage(mirrored_frame_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
