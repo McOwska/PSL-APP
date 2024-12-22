@@ -72,12 +72,16 @@ class GestureRecognitionHandler:
                 
                 predicted_action = self.actions[predicted_index.item()]
 
+
+
                 print('Predicted action:', predicted_action, 'with confidence:', confidence.item())
 
             # Nie resetujemy bufora po predykcji, bo chcemy mieć ciągłą predykcję
             # Bufor jest maxlen=20 i się przesuwa z każdą nową klatką
             # Jeśli chciałbyś reset po każdej predykcji, możesz wywołać self.reset_buffer()
+            return predicted_action, confidence.item()
             if confidence.item() >= self.confidence_threshold:
+                print('Predicted action:', predicted_action, 'with confidence:', confidence.item())
                 return predicted_action, confidence.item()
             # return predicted_action, confidence.item()
 

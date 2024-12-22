@@ -1,17 +1,22 @@
-from PyQt5.QtWidgets import QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget, QDesktopWidget, QSizePolicy, QPushButton, QSpacerItem
-from PyQt5.QtGui import QImage, QPixmap, QIcon
+from PyQt5.QtWidgets import (
+    QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget,
+    QDesktopWidget, QSizePolicy, QPushButton, QSpacerItem
+)
+from PyQt5.QtGui import QImage, QPixmap, QIcon, QFont, QFontDatabase
 from PyQt5.QtCore import Qt, QTimer
 from components.video_capture import VideoCapture
 from components.menu_component import MenuComponent
 import cv2
 from components.side_panel import SidePanel
 from helpers.format_sentence import format_sentence
-from PyQt5.QtGui import QFont, QFontDatabase
 from assets.shadow_effect import shadow_effect
+
 
 class MainWindow(QMainWindow):
     def __init__(self, prediction_handler, transform):
         super().__init__()
+        
+        # Load custom font
         id = QFontDatabase.addApplicationFont("assets/InriaSans-Regular.ttf")
         families = QFontDatabase.applicationFontFamilies(id)
         if families:
@@ -19,7 +24,7 @@ class MainWindow(QMainWindow):
             self.custom_font = QFont(custom_font_family)
         else:
             self.custom_font = QFont()
-            
+        
         self.prediction_handler = prediction_handler
         self.transform = transform
         self.setWindowTitle("Polish Sign Language Translator")
@@ -27,8 +32,8 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1500, 1000)
         self.center_window()
 
-        self.is_running = False    # Czy proces predykcji jest aktywny
-        self.is_paused = False     # Czy wideo jest spauzowane
+        self.is_running = False    # Indicates if prediction process is active
+        self.is_paused = False     # Indicates if video is paused
 
         self.init_ui()
 
@@ -41,6 +46,10 @@ class MainWindow(QMainWindow):
         self.reset_text_timer.timeout.connect(self.reset_recognized_text)
 
         self.recognized_gestures = []
+
+        # Initialize prediction buffer
+        # Each entry is a tuple: (gesture, confidence)
+        self.prediction_buffer = []
 
     def init_ui(self):
         self.video_label = QLabel(self)
@@ -56,7 +65,7 @@ class MainWindow(QMainWindow):
         self.start_stop_button.setMaximumWidth(150)
         self.start_stop_button.setProperty("status", "stopped")
 
-        # # Drugi przycisk: PAUSE/RESUME
+        # # Second button: PAUSE/RESUME
         # self.pause_resume_button = QPushButton("PAUSE", self)
         # self.pause_resume_button.clicked.connect(self.toggle_pause_resume)
         # self.pause_resume_button.setFont(self.custom_font)
@@ -68,6 +77,8 @@ class MainWindow(QMainWindow):
         self.sentence_label.setAlignment(Qt.AlignCenter)
         self.sentence_label.setFont(self.custom_font)
         self.sentence_label.setWordWrap(True)
+        self.sentence_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
+
 
         self.menu_list = MenuComponent(self)
         self.menu_list.option_clicked.connect(self.show_side_panel)
@@ -76,7 +87,7 @@ class MainWindow(QMainWindow):
         right_layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
         right_layout.addWidget(self.video_label, alignment=Qt.AlignCenter)
 
-        # Dodanie przycisków START/STOP i PAUSE/RESUME w poziomym układzie
+        # Add START/STOP and PAUSE/RESUME buttons in a horizontal layout
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(self.start_stop_button, alignment=Qt.AlignCenter)
         # buttons_layout.addWidget(self.pause_resume_button, alignment=Qt.AlignCenter)
@@ -106,25 +117,83 @@ class MainWindow(QMainWindow):
         self.move(window_geometry.topLeft())
 
     def update_video_label(self, frame):
-        # Jeśli pauza jest aktywna, to nie aktualizujemy klatki (zatrzymujemy się na ostatniej)
+        # If paused, do not update the frame (freeze on the last frame)
         if self.is_paused:
             return
 
         mirrored_frame = cv2.flip(frame, 1)
         if self.is_running:
             recognized_action, confidence = self.prediction_handler.process_frame(mirrored_frame, self.transform)
+
+            color_rect = (255, 255, 255)
+            # Rozmiar ramki
+            height, width, _ = frame.shape
+
+            # Ustawienia prostokąta
+            rect_height = 50  # Wysokość prostokąta (możesz dostosować)
+            top_left = (0, height - rect_height)
+            bottom_right = (width, height)
+
+            # Rysowanie białego prostokąta bez obramowania
+            cv2.rectangle(frame, top_left, bottom_right, color_rect, cv2.FILLED)
+
             if recognized_action is not None:
-                self.recognized_gestures.append(f"{recognized_action}")
-                self.video_capture.set_recognized_text(recognized_action)
-                self.reset_text_timer.start()
+                # Update the prediction buffer with (gesture, confidence)
+                self.prediction_buffer.append((recognized_action, confidence))
+                if len(self.prediction_buffer) > 5:
+                    self.prediction_buffer.pop(0)  # Keep only the last 5 predictions
+
+                # Check if any gesture appears at least 4 times in the last 5 predictions
+                gesture_counts = {}
+                gesture_confidences = {}
+                for gesture, conf in self.prediction_buffer:
+                    gesture_counts[gesture] = gesture_counts.get(gesture, 0) + 1
+                    gesture_confidences.setdefault(gesture, []).append(conf)
+
+                consensus_gesture = None
+                for gesture, count in gesture_counts.items():
+                    if count >= 4:
+                        # Calculate average confidence for this gesture
+                        avg_confidence = sum(gesture_confidences[gesture]) / len(gesture_confidences[gesture])
+                        if avg_confidence >= 0.8:
+                            consensus_gesture = gesture
+                            break
+
+                if consensus_gesture:
+                    # To avoid repetitive updates, check if the last recognized gesture is different
+                    if not self.recognized_gestures or self.recognized_gestures[-1] != consensus_gesture:
+                        self.recognized_gestures.append(consensus_gesture)
+                        self.video_capture.set_recognized_text(consensus_gesture)
+                        self.reset_text_timer.start()
+                        self.prediction_handler.reset_buffer()
 
             if self.video_capture.recognized_text:
-                thickness = 2
+                # Ustawienia tekstu
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 font_scale = 1
-                position = (30, 50)
-                color = (255, 255, 255)
-                cv2.putText(frame, self.video_capture.recognized_text, position, font, font_scale, color, thickness, cv2.LINE_AA)
+                thickness = 2
+                text = self.video_capture.recognized_text
+                color_text = (19, 34, 52)  
+
+
+                # Pozycja tekstu (środek prostokąta)
+                text_size, _ = cv2.getTextSize(text, font, font_scale, thickness)
+                text_width, text_height = text_size
+                text_x = (width - text_width) // 2
+                text_y = height - (rect_height // 2) + (text_height // 2)
+
+                # Rysowanie tekstu na prostokącie
+                cv2.putText(
+                    frame,
+                    text,
+                    (text_x, text_y),
+                    font,
+                    font_scale,
+                    color_text,
+                    thickness,
+                    cv2.LINE_AA
+                )
+
 
         mirrored_frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         height, width, channel = mirrored_frame_rgb.shape
@@ -147,22 +216,24 @@ class MainWindow(QMainWindow):
         
         if self.is_running:
             self.recognized_gestures.clear()
+            self.prediction_buffer.clear()  # Clear the prediction buffer when starting
             self.sentence_label.setText("")
             self.reset_text_timer.start()
         else:
-            # Zatrzymanie predykcji nie kasuje jednak bieżącej klatki
-            # Zatrzymuje tylko proces rozpoznawania
+            # Stopping prediction does not clear the current frame
+            # It only stops the recognition process
             self.sentence_label.setText(format_sentence(self.recognized_gestures))
+            self.sentence_label.adjustSize()
 
     def toggle_pause_resume(self):
-        # Przełączenie stanu pauzy wideo
+        # Toggle the pause state of the video
         self.is_paused = not self.is_paused
         if self.is_paused:
             self.pause_resume_button.setText("RESUME")
-            self.video_capture.pause()  # Wstrzymanie wideo
+            self.video_capture.pause()  # Pause the video
         else:
             self.pause_resume_button.setText("PAUSE")
-            self.video_capture.start()  # Wznowienie wideo
+            self.video_capture.start()  # Resume the video
 
     def closeEvent(self, event):
         self.video_capture.release()
@@ -184,7 +255,7 @@ class MainWindow(QMainWindow):
             self.side_panel.show_panel()
 
     def set_new_panel_content(self, content):
-        if self.is_switching_panel_content:
+        if getattr(self, 'is_switching_panel_content', False):
             self.side_panel.set_content(content)
             self.side_panel.show_panel()
             self.is_switching_panel_content = False
