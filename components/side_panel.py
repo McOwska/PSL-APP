@@ -71,13 +71,75 @@ class SidePanel(QWidget):
                     self.content.setText(self.wrap_text(file.read()))
             case "Currently available gestures":
                 with open('side_panels_content/gestures_list.txt', 'r') as file:
-                    self.content.setText(self.wrap_text(file.read()))
+                    raw_text = file.read()
+                    # Formatujemy go do dwóch kolumn
+                    two_column_html = self.wrap_text_in_two_columns(raw_text)
+                    # Ustawiamy w QLabel
+                    self.content.setText(two_column_html)
             case "About the project":
                 with open('side_panels_content/project_description.txt', 'r') as file:
                     self.content.setText(self.wrap_text(file.read()))
 
     def wrap_text(self, text):
         return f'<div style="text-align: justify;">{text}</div>'
+
+    def wrap_text_in_two_columns(self, text):
+        """
+        Converts the text lines into a two-column HTML list with smaller bullet points.
+        """
+        # Rozdzielamy tekst na linie
+        lines = text.strip().split("\n")
+        
+        # Usuwamy zbędne znaki (np. '-' na początku) i tworzymy listę gestów
+        clean_lines = [line.lstrip("-").strip() for line in lines if line.strip()]
+        
+        # Podziel listę na dwie części
+        mid = (len(clean_lines) + 1) // 2
+        left = clean_lines[:mid]
+        right = clean_lines[mid:]
+        
+        # Funkcja do tworzenia listy HTML z mniejszymi punktorami
+        def create_custom_list(items):
+            list_html = "<ul style='list-style: none; padding-left: 0;'>"
+            for item in items:
+                list_html += f"""
+                <li style="position: relative; padding-left: 10px;">
+                    <span style="
+                        position: absolute;
+                        left: 0;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        width: 5px;
+                        height: 5px;
+                        background-color: black;
+                        border-radius: 50%;
+                        display: inline-block;
+                    "></span>
+                    {item}
+                </li>
+                """
+            list_html += "</ul>"
+            return list_html
+        
+        # Tworzymy listy dla obu kolumn
+        html_left = create_custom_list(left)
+        html_right = create_custom_list(right)
+        
+        # Tworzymy tabelę HTML z dwiema kolumnami
+        html = f"""
+        <table width="100%">
+            <tr>
+                <td style="vertical-align: top; padding-right: 20px;">
+                    {html_left}
+                </td>
+                <td style="vertical-align: top;">
+                    {html_right}
+                </td>
+            </tr>
+        </table>
+        """
+        return html
+
 
     def resizeEvent(self, event):
         self.setFixedHeight(self.parent().height())

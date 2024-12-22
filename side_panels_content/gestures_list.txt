@@ -1,1 +1,49 @@
-GESTURES
+- Cześć
+- Dzień dobry
+- Dobry wieczór
+- Jak się czujesz?
+- Dobrze
+- Do widzenia
+- Dobranoc
+- Ja
+- Ty
+- Mam
+- Nazwisko 
+- Imię
+- Migowy Znak
+- Głuchy
+- Słyszący
+- Masz
+- Jest
+- Poznać
+- Mężczyzna
+- Dzieci
+- Kobieta
+- Przepraszać
+- Szkoła
+- Lat
+- Osoba
+- Numer
+- Telefon
+- Zawód
+- Adres
+- Konto
+- Głowa
+- Włosy
+- Ząb
+- Wysoki
+- Niski
+- Szczupły
+- Chudy
+- Gruby
+- Piękny
+- Brzydki
+- Młody
+- Stary
+- Ubrania
+- Koszula
+- Buty
+- Skarpety
+- Krawat
+- Sukienka
+- Sweter
